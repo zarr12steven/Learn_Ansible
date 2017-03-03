@@ -77,8 +77,14 @@
   shell: find /usr/lib/systemd/system -type f -name docker.service
   register: DockerServicePath
 
+- name: Check Insecure Registry String Exists
+  shell: grep '\-\-insecure-registry' {{ DockerServicePath.stdout }}
+  ignore_errors: yes
+  register: InsecureRegistry
+
 - name: Sed Append Line To End Of File
   shell: sed '11s/$/ --insecure-registry {{ ansible_default_ipv4.address }}:5000/' -i {{ DockerServicePath.stdout }}
+  when: "{{ InsecureRegistry.rc }} != 0"
   notify:
     - systemctl daemon-reload
     - systemctl enable docker
