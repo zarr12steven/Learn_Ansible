@@ -76,7 +76,7 @@
   register: DockerComposePath
 
 - name: Replace 3000 to 80
-  shell: sed '17s/- 3000:3000/- 80:3000/' -i {{ DockerComposePath.path }}
+  shell: sed '17s/- 3000:3000/- 80:3000/' -i {{ DockerComposePath.stdout}}
 
 - name: Find docker.service Path
   shell: find /usr/lib/systemd/system -type f -name docker.service
