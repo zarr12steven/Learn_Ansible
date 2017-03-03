@@ -1,0 +1,3 @@
+---
+# tasks file for portus
+- include: basic_setting.yml

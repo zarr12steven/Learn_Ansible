@@ -1,0 +1,86 @@
+---
+- name: Get Docker Repo
+  zypper_repository:
+    name: docker-main
+    repo: 'https://yum.dockerproject.org/repo/main/opensuse/13.2/'
+    auto_import_keys: yes
+    autorefresh: no
+    disable_gpg_check: yes
+    state: present
+
+- name: Get Container Repo
+  zypper_repository:
+    name: Virtualization:containers
+    repo: 'http://download.opensuse.org/repositories/Virtualization:/containers/openSUSE_Leap_42.2/'
+    auto_import_keys: yes
+    autorefresh: no
+    disable_gpg_check: yes
+    state: present
+
+- name: Get Portus Repo
+  zypper_repository:
+    name: Virtualization:containers:Portus
+    repo: 'http://download.opensuse.org/repositories/Virtualization:/containers:/Portus/openSUSE_Leap_42.2/'
+    auto_import_keys: yes
+    autorefresh: no
+    disable_gpg_check: yes
+    state: present
+
+- name: Get Ansible Repo
+  zypper_repository:
+    name: systemsmanagement
+    repo: 'http://download.opensuse.org/repositories/systemsmanagement/openSUSE_Leap_42.2/'
+    auto_import_keys: yes
+    autorefresh: no
+    disable_gpg_check: no
+    state: present
+
+- name: Zypper Refresh
+  zypper_repository:
+    repo: '*'
+    runrefresh: yes
+- name: Zypper Update
+  zypper:
+    name: '*'
+    state: latest
+
+- name: Install Requirement Package
+  zypper:
+    name: "{{ item }}"
+    state: latest
+  with_items:
+    - 'docker-engine'
+    - 'docker-distribution-registry'
+    - 'portus'
+    - 'git'
+    - 'vim'
+    - 'tig'
+    - 'curl'
+    - 'wget'
+
+- name: Install Docker Compose From GitHub
+  get_url:
+    url: "https://github.com/docker/compose/releases/download/1.11.2/docker-compose-Linux-x86_64"
+    dest: '/usr/local/bin/docker-compose'
+    mode: 0755
+    force: yes
+
+- name: Git Clone Portus
+  git:
+    repo: 'https://github.com/SUSE/Portus.git'
+    dest: /opt/Portus
+    update: no
+
+- name: Find docker-compose.yml Path
+  shell: find /opt -type f -name docker-compose.yml
+  register: DockerComposePath
+
+- name: Replace 3000 to 80
+  shell: sed '17s/- 3000:3000/- 80:3000/' -i {{ DockerComposePath.path }}
+
+- name: Find docker.service Path
+  shell: find /usr/lib/systemd/system -type f -name docker.service
+  register: DockerServicePath
+
+- name: Sed Append Line To End Of File
+  shell: sed '11s/$/ --insecure-registry {{ ansible_default_ipv4.address }}:5000/' -i {{ DockerServicePath.stdout }}

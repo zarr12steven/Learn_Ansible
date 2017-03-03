@@ -1,0 +1,5 @@
+---
+- name: Portus
+  hosts: portus
+  roles:
+    - { role: portus }
