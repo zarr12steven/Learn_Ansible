@@ -38,7 +38,9 @@
 - name: Zypper Refresh
   zypper_repository:
     repo: '*'
+    auto_import_keys: yes
     runrefresh: yes
+
 - name: Zypper Update
   zypper:
     name: '*'
@@ -77,3 +79,7 @@
 
 - name: Sed Append Line To End Of File
   shell: sed '11s/$/ --insecure-registry {{ ansible_default_ipv4.address }}:5000/' -i {{ DockerServicePath.stdout }}
+  notify:
+    - systemctl daemon-reload
+    - systemctl enable docker
+    - systemctl start docker

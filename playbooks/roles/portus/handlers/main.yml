@@ -1,2 +1,10 @@
 ---
 # handlers file for portus
+- name: systemctl daemon-reload
+  shell: systemctl daemon-reload
+
+- name: systemctl enable docker
+  shell: systemctl enable docker
+
+- name: systemctl start docker
+  shell: systemctl start docker
