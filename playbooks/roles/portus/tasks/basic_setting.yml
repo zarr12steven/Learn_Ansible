@@ -71,13 +71,6 @@
     dest: /opt/Portus
     update: no
 
-- name: Find docker-compose.yml Path
-  shell: find /opt -type f -name docker-compose.yml
-  register: DockerComposePath
-
-- name: Replace 3000 to 80
-  shell: sed '17s/- 3000:3000/- 80:3000/' -i {{ DockerComposePath.stdout}}
-
 - name: Find docker.service Path
   shell: find /usr/lib/systemd/system -type f -name docker.service
   register: DockerServicePath

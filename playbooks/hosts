@@ -1,0 +1,11 @@
+[portus]
+192.168.100.118
+
+[suse:children]
+portus
+
+[suse:vars]
+ansible_user=root
+ansible_ssh_pass=2017openSUSELeap
+ansible_become=yes
+ansible_become_pass=2017openSUSELeap
