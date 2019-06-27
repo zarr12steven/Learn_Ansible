@@ -52,6 +52,5 @@
           path: .
           dockerfile: "{{ playbook_dir }}/build/Dockerfile"
         state: present
-        force: yes
         push: yes
 

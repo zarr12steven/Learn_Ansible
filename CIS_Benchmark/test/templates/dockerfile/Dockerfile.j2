@@ -74,8 +74,9 @@ RUN useradd -ms /bin/bash ubuntu; \
     mkdir -p /home/ubuntu/.ssh
 RUN chown -R 'ubuntu:ubuntu' /home/ubuntu; \
     chmod 700 /home/ubuntu/.ssh; \
-     echo 'ubuntu	ALL=(ALL:ALL) NOPASSWD: ALL' >> /etc/sudoers
+    echo 'ubuntu	ALL=(ALL:ALL) NOPASSWD: ALL' >> /etc/sudoers
 COPY ./ssh /home/ubuntu/.ssh
+RUN  chmod 600 /home/ubuntu/.ssh/authorized_keys
 
 ###################
 #                 #
