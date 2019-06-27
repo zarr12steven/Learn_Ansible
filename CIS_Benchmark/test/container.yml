@@ -1,0 +1,57 @@
+---
+- hosts: localhost
+  connection: local
+  vars:
+    test_ansible_version: "2.8.1"
+    test_ansible_lint_version: "4.1.0"
+    base_image_name: "zarr12steven/sshd"
+    fakehost_image_name: "zarr12steven/fakehost"
+    test_root_password: "hello"
+  tasks:
+  - block:
+    - name: Create tmp directory
+      file:
+        path: "{{ playbook_dir }}/tmp"
+        state: directory
+
+    - name: Create build directory
+      file:
+        path: "{{ playbook_dir }}/build"
+        state: directory
+
+    - name: Copy ssh directory into build directory
+      copy:
+        src: "{{ playbook_dir }}/files/ssh"
+        dest: "{{ playbook_dir }}/build"
+        
+    - name: Create sshd Dockerfile
+      template:
+        src: "{{ playbook_dir }}/templates/dockerfile/Dockerfile-sshd.j2"
+        dest: "{{ playbook_dir }}/build/Dockerfile-sshd"
+
+    - name: Create fakehost Dockerfile
+      template:
+        src: "{{ playbook_dir }}/templates/dockerfile/Dockerfile.j2"
+        dest: "{{ playbook_dir }}/build/Dockerfile"
+
+    - name: Build sshd Dockerfile
+      docker_image:
+        name: "{{ base_image_name }}"
+        source: build
+        build:
+          path: .
+          dockerfile: "{{ playbook_dir }}/build/Dockerfile-sshd"
+        state: present
+        push: yes
+
+    - name: Build fakehost Dockerfile
+      docker_image:
+        name: "{{ fakehost_image_name }}"
+        source: build
+        build:
+          path: .
+          dockerfile: "{{ playbook_dir }}/build/Dockerfile"
+        state: present
+        force: yes
+        push: yes
+
