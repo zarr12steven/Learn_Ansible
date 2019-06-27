@@ -1,0 +1,102 @@
+FROM zarr12steven/sshd
+
+#################
+#               #
+# Install GOSU  #
+#               #
+#################
+
+ARG buildtime_GOSU_VERSION=1.11
+ENV GOSU_VERSION=$buildtime_GOSU_VERSION
+RUN set -eux; \
+# save list of currently installed packages for later so we can clean up
+        savedAptMark="$(apt-mark showmanual)"; \
+        apt-get update; \
+        apt-get install -y --no-install-recommends ca-certificates wget; \
+        if ! command -v gpg; then \
+                apt-get install -y --no-install-recommends gnupg2 dirmngr; \
+        fi; \
+        rm -rf /var/lib/apt/lists/*; \
+        \
+        dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')"; \
+        wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch"; \
+        wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch.asc"; \
+        \
+# verify the signature
+        export GNUPGHOME="$(mktemp -d)"; \
+# for flaky keyservers, consider https://github.com/tianon/pgp-happy-eyeballs, ala https://github.com/docker-library/php/pull/666
+        gpg --batch --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4; \
+        gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu; \
+        command -v gpgconf && gpgconf --kill all || :; \
+        rm -rf "$GNUPGHOME" /usr/local/bin/gosu.asc; \
+        \
+# clean up fetch dependencies
+        apt-mark auto '.*' > /dev/null; \
+        [ -z "$savedAptMark" ] || apt-mark manual $savedAptMark; \
+        apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+        \
+        chmod +x /usr/local/bin/gosu; \
+# verify that the binary works
+        gosu --version; \
+        gosu nobody true
+
+##########################################
+#                                        #
+# Setting locale default use en_US.UTF-8 #
+#                                        #
+##########################################
+
+RUN apt-get update; \
+    apt-get install -y locales; \
+    rm -rf /var/lib/apt/lists/*; \
+    localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8
+ENV LANG en_US.UTF-8
+
+################################
+#                              #
+# Install Requirement Packages #
+#                              #
+################################
+
+RUN apt-get update; \
+    apt-get install -y --no-install-recommends vim tig git wget curl net-tools dnsutils netcat; \
+    apt-get install -y --no-install-recommends default-jre apt-transport-https rsync cron logrotate ca-certificates sudo passwd; \
+    rm -rf /var/lib/apt/lists/*
+
+######################
+#                    #
+# Create Normal User # 
+#                    #
+######################
+
+RUN useradd -ms /bin/bash ubuntu; \
+    echo 'ubuntu:ubuntu'|chpasswd; \
+    mkdir -p /home/ubuntu/.ssh
+RUN chown -R 'ubuntu:ubuntu' /home/ubuntu; \
+    chmod 700 /home/ubuntu/.ssh; \
+     echo 'ubuntu	ALL=(ALL:ALL) NOPASSWD: ALL' >> /etc/sudoers
+COPY ./ssh /home/ubuntu/.ssh
+
+###################
+#                 #
+# Install Ansible #
+#                 #
+###################
+
+RUN apt-get update; \
+    apt-get install -y python-pip gcc openssl
+RUN export LC_ALL=C && pip install --upgrade pip
+RUN pip install ansible=={{ test_ansible_version }}; \
+    pip install ansible-lint=={{ test_ansible_lint_version }}
+
+
+##################
+#                #
+# Other Settings #
+#                #
+##################
+
+ADD . /tmp
+
+WORKDIR /tmp
+
