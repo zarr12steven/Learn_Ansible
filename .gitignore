@@ -1,2 +1,4 @@
 ./CIS_Benchmark/test/build
+./CIS_Benchmark/test/build/*
 ./CIS_Benchmark/test/tmp
+./CIS_Benchmark/test/tmp/*
