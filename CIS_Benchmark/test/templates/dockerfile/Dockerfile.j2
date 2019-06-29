@@ -69,14 +69,14 @@ RUN apt-get update; \
 #                    #
 ######################
 
-RUN useradd -ms /bin/bash ubuntu; \
-    echo 'ubuntu:ubuntu'|chpasswd; \
-    mkdir -p /home/ubuntu/.ssh
-RUN chown -R 'ubuntu:ubuntu' /home/ubuntu; \
-    chmod 700 /home/ubuntu/.ssh; \
-    echo 'ubuntu	ALL=(ALL:ALL) NOPASSWD: ALL' >> /etc/sudoers
-COPY ./ssh /home/ubuntu/.ssh
-RUN  chmod 600 /home/ubuntu/.ssh/authorized_keys
+RUN useradd -ms /bin/bash {{ container_user }}; \
+    echo '{{ container_user }}:{{ container_password }}' | chpasswd; \
+    echo '{{ container_user }}	ALL=(ALL:ALL) NOPASSWD: ALL' >> /etc/sudoers; \
+    mkdir -p /home/{{ container_user }}/.ssh; \
+    chown -R '{{ container_user }}:{{ container_password }}' /home/{{ container_user }};
+COPY --chown={{ container_user }}:{{ container_password }} ./ssh /home/{{ container_user }}/.ssh
+RUN  chmod 700 /home/{{ container_user }}/.ssh; \
+     chmod 600 /home/{{ container_user }}/.ssh/authorized_keys
 
 ###################
 #                 #
@@ -84,11 +84,16 @@ RUN  chmod 600 /home/ubuntu/.ssh/authorized_keys
 #                 #
 ###################
 
+ARG buildtime_ANSIBLE_VERSION={{ test_ansible_version }}
+ARG buildtime_ANSIBLE_LINT_VERSION={{ test_ansible_lint_version }}
+ENV ANSIBLE_VERSION=$buildtime_ANSIBLE_VERSION
+ENV ANSIBLE_LINT_VERSION=$buildtime_ANSIBLE_LINT_VERSION
+
 RUN apt-get update; \
     apt-get install -y python-pip gcc openssl
 RUN export LC_ALL=C && pip install --upgrade pip
-RUN pip install ansible=={{ test_ansible_version }}; \
-    pip install ansible-lint=={{ test_ansible_lint_version }}
+RUN pip install ansible==$ANSIBLE_VERSION; \
+    pip install ansible-lint==$ANSIBLE_LINT_VERSION
 
 
 ##################

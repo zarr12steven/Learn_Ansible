@@ -2,6 +2,8 @@
 - hosts: localhost
   connection: local
   vars:
+    container_user: "ubuntu"
+    container_password: "ubuntu"
     test_ansible_version: "2.8.1"
     test_ansible_lint_version: "4.1.0"
     base_image_name: "zarr12steven/sshd"
@@ -39,18 +41,18 @@
         name: "{{ base_image_name }}"
         source: build
         build:
-          path: .
-          dockerfile: "{{ playbook_dir }}/build/Dockerfile-sshd"
+          path:  "{{ playbook_dir }}/build/"
+          dockerfile: "Dockerfile-sshd"
         state: present
-        push: yes
+        #push: yes
 
     - name: Build fakehost Dockerfile
       docker_image:
         name: "{{ fakehost_image_name }}"
         source: build
         build:
-          path: .
-          dockerfile: "{{ playbook_dir }}/build/Dockerfile"
+          path: "{{ playbook_dir }}/build/"
+          dockerfile: "Dockerfile"
         state: present
-        push: yes
+        #push: yes
 
